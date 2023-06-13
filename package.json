@@ -20,7 +20,15 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@chainsafe/bls": "^7.1.1",
+    "@chainsafe/bls-keystore": "^3.0.0",
+    "@chainsafe/blst": "^0.2.9",
+    "@chainsafe/ssz": "^0.11.1",
     "@fastify/static": "^6.10.2",
+    "@lodestar/params": "^1.8.0",
+    "@lodestar/state-transition": "^1.8.0",
+    "@lodestar/types": "^1.8.0",
+    "@lodestar/utils": "^1.8.0",
     "@mikro-orm/cli": "^5.7.11",
     "@mikro-orm/core": "^5.7.11",
     "@mikro-orm/migrations": "^5.7.11",

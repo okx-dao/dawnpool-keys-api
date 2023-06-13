@@ -34,7 +34,7 @@ export class SignaturesService {
   async findOne(index: number) {
     try {
       const result = await this.repository.findOne({ index });
-      return this.buildSignatureRO(result);
+      return result;
     } catch (e) {
       this.logger.error(e);
       return e;
