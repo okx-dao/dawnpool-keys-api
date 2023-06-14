@@ -5,6 +5,7 @@ import { SignaturesModule } from '../signature/signatures.module';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { BeaconApisModule } from '../beacon-apis/beacon-apis.module';
 import { VerifyExitMessageModule } from '../verify-exit-message/verify-exit-message.module';
+import { EncryptorModule } from '../encryptor/encryptor.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { VerifyExitMessageModule } from '../verify-exit-message/verify-exit-mess
     SignaturesModule,
     BeaconApisModule,
     VerifyExitMessageModule,
+    EncryptorModule,
   ],
   providers: [Logger, AppService],
 })
