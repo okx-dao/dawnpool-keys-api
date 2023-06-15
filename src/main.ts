@@ -1,5 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule, APP_DESCRIPTION, APP_VERSION, SWAGGER_URL } from './app';
+import {
+  AppModule,
+  APP_DESCRIPTION,
+  APP_VERSION,
+  SWAGGER_URL,
+  API_PREFIX, API_VERSION
+} from './app';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
@@ -17,7 +23,7 @@ async function bootstrap() {
     new FastifyAdapter(),
     {
       logger: WinstonModule.createLogger({
-        level: 'info',
+        level: 'debug',
         format: format.combine(
           format.colorize(),
           format.timestamp(),
@@ -40,6 +46,9 @@ async function bootstrap() {
     },
   );
 
+  // set route prefixes
+  app.setGlobalPrefix(API_PREFIX);
+
   // logger
   const logger = app.get(Logger);
 
@@ -52,7 +61,10 @@ async function bootstrap() {
   await app.get(MikroORM).getMigrator().up();
 
   // versions
-  app.enableVersioning({ type: VersioningType.URI });
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: `${API_VERSION}`,
+  });
 
   // enable onShutdownHooks for MikroORM to close DB connection
   // when application exits normally
@@ -60,10 +72,20 @@ async function bootstrap() {
 
   // handling uncaught exceptions when application exits abnormally
   process.on('uncaughtException', async (error) => {
-    logger.error('uncaught exception');
-    logger.error('application will exit in 5 seconds');
+    logger.log('uncaught exception');
+    const orm = app.get(MikroORM);
+    if (orm) {
+      if (orm.em.isInTransaction()) {
+        logger.log('rolling back active DB transactions');
+        await orm.em.rollback();
+      }
+
+      logger.log('closing DB connection');
+      await orm.close();
+    }
+    logger.log('application will exit in 5 seconds');
     setTimeout(() => process.exit(1), 5000);
-    logger.error(error.toString());
+    logger.error(error);
   });
 
   // cors
@@ -96,4 +118,5 @@ async function bootstrap() {
     logger.log(`Listening on ${appPort}`),
   );
 }
-bootstrap();
+
+bootstrap().then().catch();

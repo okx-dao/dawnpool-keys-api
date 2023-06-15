@@ -6,6 +6,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { BeaconApisModule } from '../beacon-apis/beacon-apis.module';
 import { VerifyExitMessageModule } from '../verify-exit-message/verify-exit-message.module';
 import { EncryptorModule } from '../encryptor/encryptor.module';
+import { ExecutionApisModule } from '../execution-apis/execution-apis.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { EncryptorModule } from '../encryptor/encryptor.module';
     BeaconApisModule,
     VerifyExitMessageModule,
     EncryptorModule,
+    ExecutionApisModule,
   ],
   providers: [Logger, AppService],
 })

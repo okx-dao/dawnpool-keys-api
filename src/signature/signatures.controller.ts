@@ -6,8 +6,8 @@ import {
   ParseIntPipe,
   Post,
 } from '@nestjs/common';
-import { UpdateSignatureDto } from './update-signature.dto';
 import { SignaturesService } from './signatures.service';
+import { ExitMessage } from '../common/ExitMessage';
 
 @Controller('signatures')
 export class SignaturesController {
@@ -24,13 +24,8 @@ export class SignaturesController {
     return this.signaturesService.findOne(index);
   }
 
-  @Post('create')
-  create(@Body() signature: UpdateSignatureDto): number {
-    return this.signaturesService.create(signature);
-  }
-
   @Post('update')
-  update(@Body() signature: UpdateSignatureDto) {
-    return this.signaturesService.setOne(signature);
+  update(@Body() exitMessages: ExitMessage[]) {
+    return this.signaturesService.updateSignatures(exitMessages);
   }
 }

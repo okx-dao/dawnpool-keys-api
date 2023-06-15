@@ -4,6 +4,7 @@ import { ExitSignatureRepository } from './exit-signature.repository';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { ExitSignatureEntity } from '../entities/exit-signature.entity';
 import { EntityManager } from '@mikro-orm/core';
+import { ExitMessage } from "../common/ExitMessage";
 
 @Injectable()
 export class SignaturesService {
@@ -14,49 +15,33 @@ export class SignaturesService {
     protected readonly logger: Logger,
     private readonly em: EntityManager,
   ) {}
-  private readonly signatures: Signature[] = [];
-
-  create(signature: Signature): number {
-    this.signatures.push(signature);
-    return this.signatures.length - 1;
-  }
 
   async findAll() {
     const result = await this.repository.findAll();
-    this.logger.log(result);
     return result;
   }
 
-  // findOne(id: number): Signature {
-  //   return this.signatures[id];
-  // }
-
   async findOne(index: number) {
-    try {
-      const result = await this.repository.findOne({ index });
-      return result;
-    } catch (e) {
-      this.logger.error(e);
-      return e;
-    }
+    const result = await this.repository.findOne({ index });
+    return result;
   }
 
   /* Test command
    * curl -X POST -d '{"index": 2,"epoch":1,"isExited":false, "encryptedSignature": "0x123456"}' -H "Content-Type: application/json" http://127.0.0.1:3000/signatures/update
    * */
 
-  async setOne(signature: Signature) {
-    const result = this.repository.create({ ...signature });
-    await this.em.persistAndFlush(result);
-    return result;
+  async updateSignatures(exitMessages: ExitMessage[]) {
+    for (const exitMessage of exitMessages) {
+      if (await this.checkExitMessage(exitMessage)) {
+      }
+    }
+    // const result = this.repository.create({ ...signature });
+    // await this.em.persistAndFlush(result);
+    return '{}';
   }
 
-  private buildSignatureRO(signature: ExitSignatureEntity) {
-    return {
-      index: signature.index,
-      epoch: signature.epoch,
-      isExited: signature.isExited,
-      encryptedSignature: signature.encryptedSignature,
-    };
+  async checkExitMessage(exitMessage: ExitMessage) {
+
+    return true;
   }
 }
