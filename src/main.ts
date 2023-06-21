@@ -4,7 +4,8 @@ import {
   APP_DESCRIPTION,
   APP_VERSION,
   SWAGGER_URL,
-  API_PREFIX, API_VERSION
+  API_PREFIX,
+  API_VERSION,
 } from './app';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -22,26 +23,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
     {
-      logger: WinstonModule.createLogger({
-        level: 'debug',
-        format: format.combine(
-          format.colorize(),
-          format.timestamp(),
-          format.printf(({ timestamp, level, message }) => {
-            return `[${timestamp}] ${level}: ${message}`;
-          }),
-        ),
-        defaultMeta: { service: 'user-service' },
-        transports: [
-          //
-          // - Write all logs with importance level of `error` or less to `error.log`
-          // - Write all logs with importance level of `info` or less to `combined.log`
-          //
-          new transports.File({ filename: 'error.log', level: 'error' }),
-          new transports.File({ filename: 'combined.log' }),
-          new transports.Console(),
-        ],
-      }),
+      logger: false,
       bufferLogs: true,
     },
   );
@@ -49,13 +31,34 @@ async function bootstrap() {
   // set route prefixes
   app.setGlobalPrefix(API_PREFIX);
 
-  // logger
-  const logger = app.get(Logger);
-
   // config
   const config = app.get(ConfigService);
   const appPort = config.get('PORT', { infer: true });
   const corsWhitelist = config.get('CORS_WHITELIST_REGEXP', { infer: true });
+  const logLevel = config.get('LOG_LEVEL', { infer: true });
+
+  // logger
+  const logger = WinstonModule.createLogger({
+    level: logLevel,
+    format: format.combine(
+      format.colorize(),
+      format.timestamp(),
+      format.printf(({ timestamp, level, message }) => {
+        return `[${timestamp}] ${level}: ${message}`;
+      }),
+    ),
+    defaultMeta: { service: 'user-service' },
+    transports: [
+      //
+      // - Write all logs with importance level of `error` or less to `error.log`
+      // - Write all logs with importance level of `info` or less to `combined.log`
+      //
+      new transports.File({ filename: 'error.log', level: 'error' }),
+      new transports.File({ filename: 'combined.log' }),
+      new transports.Console(),
+    ],
+  });
+  app.useLogger(logger);
 
   // migrating when starting application
   await app.get(MikroORM).getMigrator().up();

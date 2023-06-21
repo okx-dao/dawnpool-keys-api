@@ -13,12 +13,6 @@ import { ExitMessage } from '../common/ExitMessage';
 export class SignaturesController {
   constructor(private readonly signaturesService: SignaturesService) {}
 
-  @Get()
-  findAll(): string {
-    const signatures = this.signaturesService.findAll();
-    return JSON.stringify(signatures);
-  }
-
   @Get(':index')
   findOne(@Param('index', ParseIntPipe) index: number) {
     return this.signaturesService.findOne(index);

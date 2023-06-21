@@ -1,12 +1,8 @@
 import { Logger, Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SignaturesModule } from '../signature/signatures.module';
+import { SignaturesModule } from '../signature';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { BeaconApisModule } from '../beacon-apis/beacon-apis.module';
-import { VerifyExitMessageModule } from '../verify-exit-message/verify-exit-message.module';
-import { EncryptorModule } from '../encryptor/encryptor.module';
-import { ExecutionApisModule } from '../execution-apis/execution-apis.module';
 
 @Module({
   imports: [
@@ -23,17 +19,13 @@ import { ExecutionApisModule } from '../execution-apis/execution-apis.module';
         password: configService.get('DB_PASSWORD'),
         autoLoadEntities: true,
         cache: { enabled: false },
-        debug: true,
+        debug: configService.get('DB_DEBUG'),
         registerRequestContext: true,
         allowGlobalContext: false,
       }),
       inject: [ConfigService],
     }),
     SignaturesModule,
-    BeaconApisModule,
-    VerifyExitMessageModule,
-    EncryptorModule,
-    ExecutionApisModule,
   ],
   providers: [Logger, AppService],
 })

@@ -24,6 +24,6 @@ export class ExitSignatureEntity {
   @Property({ type: t.boolean })
   isExited!: boolean;
 
-  @Property({ type: t.string })
+  @Property({ type: t.text })
   encryptedSignature!: string;
 }

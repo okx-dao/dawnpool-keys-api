@@ -24,7 +24,7 @@ export class EncryptorService {
     const pubkey = new Uint8Array();
     const path = '';
     const encrypted = await create(this.ENCRYPT_PASSWORD, origin, pubkey, path);
-    return JSON.stringify(encrypted).toString();
+    return JSON.stringify(encrypted);
   }
 
   async decrypt(encrypted: EncryptedDto) {

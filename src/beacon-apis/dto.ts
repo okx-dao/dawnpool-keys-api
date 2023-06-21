@@ -25,3 +25,10 @@ export interface validatorInfoDTO {
     exit_epoch: string;
   };
 }
+
+export interface FinalityCheckpointsDTO {
+  current_justified: {
+    epoch: string;
+    root: string;
+  };
+}

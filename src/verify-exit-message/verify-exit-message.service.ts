@@ -1,11 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { BeaconApisService } from '../beacon-apis/beacon-apis.service';
+import { BeaconApisService } from '../beacon-apis';
 import { ExitMessage } from '../common/ExitMessage';
-// import { ssz } from '@lodestar/types';
-// import bls from '@chainsafe/bls';
-// import { computeDomain, computeSigningRoot } from '@lodestar/state-transition';
-// import { DOMAIN_VOLUNTARY_EXIT, FAR_FUTURE_EPOCH } from '@lodestar/params';
-// import { fromHex } from '@lodestar/utils';
+import { ExecutionApisService } from '../execution-apis';
+import { ZeroAddress } from 'ethers';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class VerifyExitMessageService {
@@ -14,8 +12,15 @@ export class VerifyExitMessageService {
     protected readonly logger: Logger,
     @Inject(BeaconApisService)
     protected readonly beaconApis: BeaconApisService,
-  ) {}
+    @Inject(ExecutionApisService)
+    protected readonly executionApis: ExecutionApisService,
+    @Inject(ConfigService)
+    protected readonly config: ConfigService,
+  ) {
+    this.hardForkEpoch = config.get('HARD_FORK_EPOCH');
+  }
 
+  protected hardForkEpoch: number;
   protected ssz: any;
   protected bls: any;
   protected computeDomain: any;
@@ -46,59 +51,158 @@ export class VerifyExitMessageService {
     this.fromHex = fromHex;
   }
 
-  async verifyExitMessage(exitMessage: ExitMessage): Promise<boolean> {
+  async verifyExitMessage(exitMessage: ExitMessage) {
     await this.loadChainsafe();
     const genesis = await this.beaconApis.getGenesis();
     const state = await this.beaconApis.getState();
-    const { message, signature: rawSignature } = exitMessage;
-    const { validator_index, epoch } = message;
-    let validatorInfo: { pubkey; isExiting };
+    return await this.verify(genesis, state, exitMessage);
+  }
+
+  async verifyExitMessages(exitMessages: ExitMessage[]) {
+    await this.loadChainsafe();
+    const genesis = await this.beaconApis.getGenesis();
+    const state = await this.beaconApis.getState();
+    const verifiedMessages: {
+      dawnIndex: number;
+      public_key: string;
+      exitMessage: ExitMessage;
+    }[] = [];
+    const notVerifiedMessages: {
+      validator_index: string;
+      public_key: string;
+      error: string;
+    }[] = [];
+    for (const exitMessage of exitMessages) {
+      // check params
+      if (parseInt(exitMessage.message.epoch) < this.hardForkEpoch) {
+        notVerifiedMessages.push({
+          validator_index: exitMessage.message.validator_index,
+          public_key: '',
+          error: 'Exit epoch too small',
+        });
+        continue;
+      }
+      const { current_justified } =
+        await this.beaconApis.getHeadFinalityCheckpoints();
+      if (
+        parseInt(exitMessage.message.epoch) > parseInt(current_justified.epoch)
+      ) {
+        notVerifiedMessages.push({
+          validator_index: exitMessage.message.validator_index,
+          public_key: '',
+          error: 'Exit epoch too big',
+        });
+        continue;
+      }
+      // verify
+      const result = await this.verify(genesis, state, exitMessage);
+      if (result.isValid) {
+        verifiedMessages.push({
+          dawnIndex: result.dawnIndex,
+          public_key: result.public_key,
+          exitMessage,
+        });
+      } else {
+        notVerifiedMessages.push({
+          validator_index: exitMessage.message.validator_index,
+          public_key: result.public_key,
+          error: result.error,
+        });
+      }
+    }
+    return { verifiedMessages, notVerifiedMessages };
+  }
+
+  async verify(genesis, state, exitMessage) {
+    const { validator_index } = exitMessage.message;
+    const result = {
+      dawnIndex: 0,
+      isValid: false,
+      public_key: '',
+      isExiting: false,
+      error: '',
+    };
     try {
-      const { validator } = await this.beaconApis.getOneValidator(
+      const validatorDto = await this.beaconApis.getOneValidator(
         validator_index,
       );
-      validatorInfo = {
-        pubkey: validator.pubkey,
-        isExiting: validator.exit_epoch === String(this.FAR_FUTURE_EPOCH),
-      };
+      result.public_key = validatorDto.validator.pubkey;
+      result.isExiting =
+        validatorDto.validator.exit_epoch === String(this.FAR_FUTURE_EPOCH);
     } catch (e) {
+      result.error = e.message;
       this.logger.error(e.message);
-      return false;
+      return result;
     }
-    const pubKey = this.fromHex(validatorInfo.pubkey);
-    const signature = this.fromHex(rawSignature);
 
-    const GENESIS_VALIDATORS_ROOT = this.fromHex(
-      genesis.genesis_validators_root,
-    );
+    if (result.isExiting) {
+      result.error = 'Validator is exiting or exited';
+      return result;
+    }
+
+    // check if dawn pool validator
+    const { index, operator, status } = {
+      index: 0,
+      operator: '0x026Cc292d54Fa98F604F79EBa5ee6bCA46479944',
+      status: 1,
+    };
+    // await this.executionApis.getNodeValidatorByPubkey(result.public_key);
+    if (!operator || operator === ZeroAddress) {
+      result.error = 'Not dawn pool validator';
+      return result;
+    }
+    result.dawnIndex = index;
+    if (
+      status != DawnValidatorStatus.WAITING_ACTIVATED &&
+      status != DawnValidatorStatus.VALIDATING
+    ) {
+      result.error = 'Dawn pool validator status not match';
+      return result;
+    }
+
+    // verify signature
     const CURRENT_FORK = this.fromHex(state.current_version);
     // const PREVIOUS_FORK = fromHex(state.previous_version);
-
-    const verifyFork = (fork: Uint8Array) => {
-      const domain = this.computeDomain(
-        this.DOMAIN_VOLUNTARY_EXIT,
-        fork,
-        GENESIS_VALIDATORS_ROOT,
-      );
-
-      const parsedExit = {
-        epoch: parseInt(epoch, 10),
-        validatorIndex: parseInt(validator_index, 10),
-      };
-
-      const signingRoot = this.computeSigningRoot(
-        this.ssz.phase0.VoluntaryExit,
-        parsedExit,
-        domain,
-      );
-      const isValid = this.bls.verify(pubKey, signingRoot, signature);
-      return isValid;
-    };
-    const isValid = verifyFork(CURRENT_FORK);
+    result.isValid = this.verifyFork(
+      exitMessage,
+      result.public_key,
+      CURRENT_FORK,
+      genesis,
+    );
     // if (!isValid) isValid = verifyFork(PREVIOUS_FORK);
     // if (!isValid) {
     //   return false;
     // }
+    if (!result.isValid) {
+      result.error = 'Verify signature failed(use current fork version)';
+    }
+    return result;
+  }
+
+  verifyFork(exitMessage, pubkey, fork: Uint8Array, genesis) {
+    const GENESIS_VALIDATORS_ROOT = this.fromHex(
+      genesis.genesis_validators_root,
+    );
+
+    const domain = this.computeDomain(
+      this.DOMAIN_VOLUNTARY_EXIT,
+      fork,
+      GENESIS_VALIDATORS_ROOT,
+    );
+    const { validator_index, epoch } = exitMessage.message;
+    const parsedExit = {
+      epoch: parseInt(epoch, 10),
+      validatorIndex: parseInt(validator_index, 10),
+    };
+
+    const signingRoot = this.computeSigningRoot(
+      this.ssz.phase0.VoluntaryExit,
+      parsedExit,
+      domain,
+    );
+    const hexPubkey = this.fromHex(pubkey);
+    const hexSignature = this.fromHex(exitMessage.signature);
+    const isValid = this.bls.verify(hexPubkey, signingRoot, hexSignature);
     return isValid;
   }
 }

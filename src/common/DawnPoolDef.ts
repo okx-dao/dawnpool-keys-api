@@ -1,0 +1,9 @@
+const enum DawnValidatorStatus {
+  NOT_EXIST,
+  WAITING_ACTIVATED,
+  VALIDATING,
+  EXITING,
+  SLASHING,
+  EXITED,
+  UNSAFE,
+}

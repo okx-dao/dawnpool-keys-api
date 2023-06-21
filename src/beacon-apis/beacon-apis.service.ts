@@ -1,12 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { genesisDTO, validatorInfoDTO, stateDTO } from './dto';
+import { genesisDTO, validatorInfoDTO, stateDTO, FinalityCheckpointsDTO } from "./dto";
 
 @Injectable()
 export class BeaconApisService {
   constructor(
     @Inject(ConfigService)
-    private readonly config: ConfigService,
+    protected readonly config: ConfigService,
+    @Inject(Logger)
+    protected readonly logger: Logger,
   ) {
     this.beaconNode = this.config.get('CL_API_URLS');
   }
@@ -23,6 +25,7 @@ export class BeaconApisService {
         `Get validator ${validator_index} failed, res: ${JSON.stringify(data)}`,
       );
     }
+    this.logger.log(`Got beacon validator: ${JSON.stringify(validator)}`);
     return validator;
   }
 
@@ -35,6 +38,7 @@ export class BeaconApisService {
     if (!genesis) {
       throw new Error(`Get genesis failed, res: ${JSON.stringify(data)}`);
     }
+    this.logger.log(`Got beacon genesis: ${JSON.stringify(genesis)}`);
     return genesis;
   }
 
@@ -47,6 +51,24 @@ export class BeaconApisService {
     if (!state) {
       throw new Error(`Get state failed, res: ${JSON.stringify(data)}`);
     }
+    this.logger.log(`Got beacon state: ${JSON.stringify(state)}`);
     return state;
+  }
+
+  async getHeadFinalityCheckpoints() {
+    const url = `${this.beaconNode}/eth/v1/beacon/states/head/finality_checkpoints`;
+    // 获取fetch的数据并返回
+    const res = await fetch(url);
+    const data = await res.json();
+    const checkpoints: FinalityCheckpointsDTO = data.data;
+    if (!checkpoints) {
+      throw new Error(
+        `Get finality_checkpoints failed, res: ${JSON.stringify(data)}`,
+      );
+    }
+    this.logger.log(
+      `Got finality_checkpoints state: ${JSON.stringify(checkpoints)}`,
+    );
+    return checkpoints;
   }
 }
