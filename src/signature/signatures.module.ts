@@ -8,6 +8,7 @@ import { VerifyExitMessageService } from '../verify-exit-message';
 import { EncryptorService } from '../encryptor';
 import { BeaconApisModule } from '../beacon-apis';
 import { ExecutionApisModule } from '../execution-apis';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -21,7 +22,9 @@ import { ExecutionApisModule } from '../execution-apis';
     ExitSignatureRepository,
     VerifyExitMessageService,
     EncryptorService,
+    JwtService,
     Logger,
   ],
+  exports: [SignaturesService],
 })
 export class SignaturesModule {}

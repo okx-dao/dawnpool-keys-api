@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 @Module({
   imports: [],
   controllers: [],
-  providers: [ConfigService, EncryptorService, Logger],
+  providers: [EncryptorService, ConfigService, Logger],
   exports: [EncryptorService],
 })
 export class EncryptorModule {}

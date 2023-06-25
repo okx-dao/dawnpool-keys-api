@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import Web3 from 'web3';
 import { keccak256, encodePacked } from 'web3-utils';
 import { encodeFunctionCall, decodeParameters } from 'web3-eth-abi';
+import { Web3tService } from '../web3t';
+import { Web3 } from 'web3';
 
 @Injectable()
 export class ExecutionApisService {
@@ -11,15 +12,16 @@ export class ExecutionApisService {
     protected readonly logger: Logger,
     @Inject(ConfigService)
     protected readonly config: ConfigService,
+    @Inject(Web3tService)
+    protected web3t: Web3tService,
   ) {
-    this.executionNode = this.config.get('EL_API_URLS');
-    this.web3 = new Web3(this.executionNode);
     this.dawnStorageAddress = this.config.get('DAWN_STORAGE_CONTRACT');
+    const { web3 } = this.web3t.useWeb3();
+    this.web3 = web3;
   }
-  private readonly executionNode: string;
-  private web3: Web3;
   private readonly dawnStorageAddress: string;
   private depositNodeManagerAddress: string;
+  private web3: Web3;
 
   async getDepositNodeManagerAddress() {
     if (this.depositNodeManagerAddress) {

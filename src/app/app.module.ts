@@ -1,8 +1,10 @@
-import { Logger, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SignaturesModule } from '../signature';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { AuthModule } from '../auth';
+import { Web3tModule } from "../web3t";
 
 @Module({
   imports: [
@@ -25,8 +27,10 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
       }),
       inject: [ConfigService],
     }),
+    Web3tModule,
+    AuthModule,
     SignaturesModule,
   ],
-  providers: [Logger, AppService],
+  providers: [AppService],
 })
 export class AppModule {}

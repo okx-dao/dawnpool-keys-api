@@ -2,7 +2,7 @@ import { create, decrypt } from '@chainsafe/bls-keystore';
 import { toUtf8Bytes } from 'ethers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EncryptedDto } from "./encrypted.dto";
+import { EncryptedDto } from './encrypted.dto';
 
 @Injectable()
 export class EncryptorService {

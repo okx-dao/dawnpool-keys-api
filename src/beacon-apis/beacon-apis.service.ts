@@ -1,6 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { genesisDTO, validatorInfoDTO, stateDTO, FinalityCheckpointsDTO } from "./dto";
+import {
+  genesisDTO,
+  validatorInfoDTO,
+  stateDTO,
+  FinalityCheckpointsDTO,
+} from './dto';
 
 @Injectable()
 export class BeaconApisService {

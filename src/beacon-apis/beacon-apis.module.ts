@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 @Module({
   imports: [],
   controllers: [],
-  providers: [ConfigService, BeaconApisService, Logger],
+  providers: [BeaconApisService, ConfigService, Logger],
   exports: [BeaconApisService],
 })
 export class BeaconApisModule {}

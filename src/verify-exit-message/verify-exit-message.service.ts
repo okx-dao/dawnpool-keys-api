@@ -141,12 +141,8 @@ export class VerifyExitMessageService {
     }
 
     // check if dawn pool validator
-    const { index, operator, status } = {
-      index: 0,
-      operator: '0x026Cc292d54Fa98F604F79EBa5ee6bCA46479944',
-      status: 1,
-    };
-    // await this.executionApis.getNodeValidatorByPubkey(result.public_key);
+    const { index, operator, status } =
+      await this.executionApis.getNodeValidatorByPubkey(result.public_key);
     if (!operator || operator === ZeroAddress) {
       result.error = 'Not dawn pool validator';
       return result;
