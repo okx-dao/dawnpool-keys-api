@@ -96,6 +96,9 @@ export class ExecutionApisService {
       string,
       bigint,
     ];
+    this.logger.log(
+      `Got validator from contract, index: ${index}, operator: ${operator}, status: ${status}`,
+    );
     return { index: Number(index), operator, status: Number(status) };
   }
 }

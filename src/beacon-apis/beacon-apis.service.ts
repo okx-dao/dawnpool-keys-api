@@ -6,6 +6,7 @@ import {
   stateDTO,
   FinalityCheckpointsDTO,
 } from './dto';
+import { ExitMessage } from '../common/ExitMessage';
 
 @Injectable()
 export class BeaconApisService {
@@ -75,5 +76,19 @@ export class BeaconApisService {
       `Got finality_checkpoints state: ${JSON.stringify(checkpoints)}`,
     );
     return checkpoints;
+  }
+
+  async voluntaryExit(exitMessage: ExitMessage) {
+    const url = `${this.beaconNode}/eth/v1/beacon/pool/voluntary_exits`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exitMessage),
+    });
+    const result = await res.text();
+    this.logger.log(
+      `Voluntary exit, validator_index: ${exitMessage.message.validator_index}, success: ${res.ok}, message: ${result}`,
+    );
+    return { success: res.ok, message: result };
   }
 }

@@ -35,8 +35,7 @@ export class VerifyExitMessageService {
     }
     const { ssz } = await import('@lodestar/types');
     this.ssz = ssz;
-    const bls = (await import('@chainsafe/bls')).default;
-    this.bls = bls;
+    this.bls = (await import('@chainsafe/bls')).default;
     const { computeDomain, computeSigningRoot } = await import(
       '@lodestar/state-transition'
     );
@@ -62,6 +61,8 @@ export class VerifyExitMessageService {
     await this.loadChainsafe();
     const genesis = await this.beaconApis.getGenesis();
     const state = await this.beaconApis.getState();
+    const { current_justified } =
+      await this.beaconApis.getHeadFinalityCheckpoints();
     const verifiedMessages: {
       dawnIndex: number;
       public_key: string;
@@ -82,8 +83,7 @@ export class VerifyExitMessageService {
         });
         continue;
       }
-      const { current_justified } =
-        await this.beaconApis.getHeadFinalityCheckpoints();
+
       if (
         parseInt(exitMessage.message.epoch) > parseInt(current_justified.epoch)
       ) {
@@ -94,6 +94,7 @@ export class VerifyExitMessageService {
         });
         continue;
       }
+
       // verify
       const result = await this.verify(genesis, state, exitMessage);
       if (result.isValid) {
@@ -198,7 +199,6 @@ export class VerifyExitMessageService {
     );
     const hexPubkey = this.fromHex(pubkey);
     const hexSignature = this.fromHex(exitMessage.signature);
-    const isValid = this.bls.verify(hexPubkey, signingRoot, hexSignature);
-    return isValid;
+    return this.bls.verify(hexPubkey, signingRoot, hexSignature);
   }
 }

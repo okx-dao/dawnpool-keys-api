@@ -2,7 +2,6 @@ import { create, decrypt } from '@chainsafe/bls-keystore';
 import { toUtf8Bytes } from 'ethers';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EncryptedDto } from './encrypted.dto';
 
 @Injectable()
 export class EncryptorService {
@@ -18,7 +17,7 @@ export class EncryptorService {
 
   async encrypt(message: string) {
     if (!this.ENCRYPT_PASSWORD) {
-      throw new Error('ENCRYPT_PASSWORD not defined');
+      return message;
     }
     const origin = toUtf8Bytes(message);
     const pubkey = new Uint8Array();
@@ -27,12 +26,11 @@ export class EncryptorService {
     return JSON.stringify(encrypted);
   }
 
-  async decrypt(encrypted: EncryptedDto) {
+  async decrypt(encrypted: string) {
     if (!this.ENCRYPT_PASSWORD) {
-      throw new Error('ENCRYPT_PASSWORD not defined');
+      return encrypted;
     }
-    const content = await decrypt({ ...encrypted }, this.ENCRYPT_PASSWORD);
-    const decrypted = new TextDecoder().decode(content);
-    return decrypted;
+    const content = await decrypt(JSON.parse(encrypted), this.ENCRYPT_PASSWORD);
+    return new TextDecoder().decode(content);
   }
 }

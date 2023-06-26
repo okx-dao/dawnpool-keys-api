@@ -10,6 +10,7 @@ import {
 import { SignaturesService } from './signatures.service';
 import { ExitMessage } from '../common/ExitMessage';
 import { AuthGuard } from '../auth';
+import { ExitLogDTO } from './dto';
 
 @Controller('signatures')
 export class SignaturesController {
@@ -25,5 +26,11 @@ export class SignaturesController {
   @Post('update')
   update(@Body() exitMessages: ExitMessage[]) {
     return this.signaturesService.updateSignatures(exitMessages);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('exit')
+  validatorExit(@Body() exitLog: ExitLogDTO) {
+    return this.signaturesService.validatorExit(exitLog);
   }
 }
