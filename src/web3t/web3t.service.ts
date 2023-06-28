@@ -13,9 +13,9 @@ export class Web3tService {
   ) {
     this.executionNode = this.config.get('EL_API_URLS');
     this.web3 = new Web3(this.executionNode);
-    this.account = this.web3.accountProvider.privateKeyToAccount(
-      this.config.get('PRIVATE_KEY'),
-    );
+    // this.account = this.web3.accountProvider.privateKeyToAccount(
+    //   this.config.get('PRIVATE_KEY'),
+    // );
   }
   private readonly executionNode: string;
   private readonly web3: Web3;

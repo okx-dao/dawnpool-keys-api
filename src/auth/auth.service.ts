@@ -42,6 +42,9 @@ export class AuthService {
     }
     const payload = { address: signer, message: signed.message };
     const token = await this.jwtService.signAsync(payload);
+    this.logger.log(
+      `User ${signer} sign in succeeded, message: ${signed.message}, token: ${token}`,
+    );
     return token;
   }
 

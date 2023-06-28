@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SignaturesModule } from '../signature';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AuthModule } from '../auth';
-import { Web3tModule } from "../web3t";
+import { Web3tModule } from '../web3t';
 
 @Module({
   imports: [
@@ -21,7 +21,7 @@ import { Web3tModule } from "../web3t";
         password: configService.get('DB_PASSWORD'),
         autoLoadEntities: true,
         cache: { enabled: false },
-        debug: configService.get('DB_DEBUG'),
+        debug: configService.get<string>('DB_DEBUG') === 'true',
         registerRequestContext: true,
         allowGlobalContext: false,
       }),

@@ -9,7 +9,7 @@ import {
 } from './app';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -17,32 +17,40 @@ import {
 import { transports, format } from 'winston';
 import { WinstonModule } from 'nest-winston';
 import { MikroORM } from '@mikro-orm/core';
+import * as fs from 'fs';
 
 async function bootstrap() {
+  // read https
+  let httpsOptions;
+  if (process.env.ENABLE_HTTPS === 'true') {
+    httpsOptions = {
+      key: fs.readFileSync(process.env.HTTPS_PRIVATE_KEY),
+      cert: fs.readFileSync(process.env.HTTPS_CERT_CHAINS),
+    };
+  }
+
+  // create app
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({ https: httpsOptions }),
     {
       // logger: false,
       bufferLogs: true,
     },
   );
 
+  // config
+  const config = app.get(ConfigService);
+
   // set route prefixes
   app.setGlobalPrefix(API_PREFIX);
 
-  // config
-  const config = app.get(ConfigService);
-  const appPort = config.get('PORT', { infer: true });
-  const corsWhitelist = config.get('CORS_WHITELIST_REGEXP', { infer: true });
-  const logLevel = config.get('LOG_LEVEL', { infer: true });
-
   // logger
   const logger = WinstonModule.createLogger({
-    level: logLevel,
+    level: config.get('LOG_LEVEL'),
     format: format.combine(
       format.colorize(),
-      format.timestamp(),
+      format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
       format.printf(({ timestamp, level, message }) => {
         return `[${timestamp}] ${level}: ${message}`;
       }),
@@ -60,6 +68,16 @@ async function bootstrap() {
   });
   app.useLogger(logger);
 
+  logger.log(new Date().toLocaleString('en-GB'));
+
+  if (process.env.ENABLE_HTTPS === 'true') {
+    logger.log(
+      `Enable https, ${JSON.stringify({
+        key: process.env.HTTPS_PRIVATE_KEY,
+        cert: process.env.HTTPS_CERT_CHAINS,
+      })}`,
+    );
+  }
   // migrating when starting application
   await app.get(MikroORM).getMigrator().up();
 
@@ -92,6 +110,7 @@ async function bootstrap() {
   });
 
   // cors
+  const corsWhitelist = config.get('CORS_WHITELIST_REGEXP', { infer: true });
   if (corsWhitelist !== '') {
     const whitelistRegexp = new RegExp(corsWhitelist);
 
@@ -117,6 +136,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // app
+  const appPort = config.get('PORT', { infer: true });
   await app.listen(appPort, '0.0.0.0', () =>
     logger.log(`Listening on ${appPort}`),
   );

@@ -86,9 +86,15 @@ export class BeaconApisService {
       body: JSON.stringify(exitMessage),
     });
     const result = await res.text();
-    this.logger.log(
-      `Voluntary exit, validator_index: ${exitMessage.message.validator_index}, success: ${res.ok}, message: ${result}`,
-    );
-    return { success: res.ok, message: result };
+    if (!res.ok) {
+      throw new Error(
+        `Voluntary exit failed, validator_index: ${exitMessage.message.validator_index}, message: ${result}`,
+      );
+    } else {
+      this.logger.log(
+        `Voluntary exit succeeded, validator_index: ${exitMessage.message.validator_index}, message: ${result}`,
+      );
+    }
+    return result;
   }
 }
