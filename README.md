@@ -159,7 +159,7 @@ curl -X 'POST' \
   -d '[{"message":{"epoch":"179252","validator_index":"464381"},"signature":"0xa9b93d5331de18dafb491cbd8ed5b16a8f516a697ae315fb6aa14c58c77034c18da687a923ff42d684d4a4507149d523174a5541ce55200fbaaac5906e02b67529676c13ed67a0348fa6426be391a2f76d1107dbbfb7210d8cc0872fd7522d17"},{"message":{"epoch":"179252","validator_index":"465086"},"signature":"0xaccd59e24cf2484122a1deb94b5536483402801d3e27fc31b26aec53fa62a1a0bf2f9cb14f5a0b8db49b7ca22086d0a80ccf31ad8bbdc4e1550f0aa5f87960fc929092f6e54747f333e739ef3f6b6d11f2d12bdeeec06996012718b69a1773af"}]'
 ```
 
-### /api/v1/signatures/exit
+### POST /api/v1/signatures/exit
 Query
 - exit log: The exit log sent by specified contract
 ```TypeScript
