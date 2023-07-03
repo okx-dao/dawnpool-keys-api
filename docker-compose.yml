@@ -1,0 +1,78 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    volumes:
+      - ./.pgdata-volumes/pgdata-keys-api/:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  keys_api_create_db:
+    build: ./
+    environment:
+      - PORT=${PORT}
+      - CORS_WHITELIST_REGEXP=${CORS_WHITELIST_REGEXP}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - EL_API_URLS=${EL_API_URLS}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DEBUG=${DB_DEBUG}
+      - CL_API_URLS=${CL_API_URLS}
+      - ENCRYPT_PASSWORD=${ENCRYPT_PASSWORD}
+      - DAWN_STORAGE_CONTRACT=${DAWN_STORAGE_CONTRACT}
+      - HARD_FORK_EPOCH=${HARD_FORK_EPOCH}
+      - ACCOUNTS=${ACCOUNTS}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES=${JWT_EXPIRES}
+      - ENABLE_HTTPS=${ENABLE_HTTPS}
+      - HTTPS_PRIVATE_KEY=${HTTPS_PRIVATE_KEY}
+      - HTTPS_CERT_CHAINS=${HTTPS_CERT_CHAINS}
+    command: npx mikro-orm schema:create --run
+    depends_on:
+      db:
+        condition: service_healthy
+
+  keys_api:
+    build: ./
+    restart: always
+    environment:
+      - PORT=${PORT}
+      - CORS_WHITELIST_REGEXP=${CORS_WHITELIST_REGEXP}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - EL_API_URLS=${EL_API_URLS}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_HOST=db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DEBUG=${DB_DEBUG}
+      - CL_API_URLS=${CL_API_URLS}
+      - ENCRYPT_PASSWORD=${ENCRYPT_PASSWORD}
+      - DAWN_STORAGE_CONTRACT=${DAWN_STORAGE_CONTRACT}
+      - HARD_FORK_EPOCH=${HARD_FORK_EPOCH}
+      - ACCOUNTS=${ACCOUNTS}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES=${JWT_EXPIRES}
+      - ENABLE_HTTPS=${ENABLE_HTTPS}
+      - HTTPS_PRIVATE_KEY=${HTTPS_PRIVATE_KEY}
+      - HTTPS_CERT_CHAINS=${HTTPS_CERT_CHAINS}
+    ports:
+      - '${PORT}:${PORT}'
+    depends_on:
+      - db
