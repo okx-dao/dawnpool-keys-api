@@ -61,6 +61,16 @@ export class SignaturesService {
     }
     if (entities.length > 0) {
       await this.em.upsertMany(entities);
+      this.logger.log(
+        `Validator signatures updated: ${JSON.stringify(updatedMessages)}`,
+      );
+    }
+    if (notVerifiedMessages && notVerifiedMessages.length > 0) {
+      this.logger.warn(
+        `Validator signatures update failed: ${JSON.stringify(
+          notVerifiedMessages,
+        )}`,
+      );
     }
     return { updatedMessages, notVerifiedMessages };
   }
